@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      padding: 1em;
+    }
+
+    section {
+      margin: 20px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      max-width: 300px;
+    }
+
+    label {
+      margin-bottom: 5px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      cursor: pointer;
+    }
+  </style>
+  <title>Biomass Monitoring System</title>
+</head>
+<body>
+  <header>
+    <h1>Biomass Monitoring System</h1>
+    <button onclick="toggleAuthentication()">Toggle Authentication</button>
+  </header>
+  <section id="biomassData">
+    <h2>Biomass Data</h2>
+    <label for="filterType">Filter by Type:</label>
+    <select id="filterType" onchange="filterBiomass()">
+      <option value="">All Types</option>
+      <!-- Add biomass types dynamically based on data -->
+    </select>
+    <label for="searchEntry">Search Entry:</label>
+    <input type="text" id="searchEntry" oninput="searchBiomass()">
+    <ul id="biomassList"></ul>
+    <button onclick="viewHistoricalData()">View Historical Data</button>
+  </section>
+  <section id="addBiomassForm">
+    <h2>Add Biomass Entry</h2>
+    <form id="biomassForm">
+      <label for="biomassType">Biomass Type:</label>
+      <input type="text" id="biomassType" required>
+
+      <label for="biomassQuantity">Biomass Quantity:</label>
+      <input type="number" id="biomassQuantity" required>
+
+      <button type="button" onclick="addBiomassEntry()">Add Entry</button>
+    </form>
+  </section>
+  <script>
+    const biomassForm = document.getElementById("biomassForm");
+    const biomassList = document.getElementById("biomassList");
+    const filterTypeSelect = document.getElementById("filterType");
+    const searchEntryInput = document.getElementById("searchEntry");
+
+    // Check if the user is authenticated
+    let isAuthenticated = localStorage.getItem("authenticated") === "true";
+
+    // User roles (For simplicity, a user is either an admin or not)
+    let isAdmin = localStorage.getItem("isAdmin") === "true";
+
+    // Sample biomass data
+    const biomassData = [
+      { type: "Wood", quantity: 50 },
+      { type: "Crop Residue", quantity: 30 },
+      { type: "Grass", quantity: 25 },
+      // Add more biomass types as needed
+    ];
+
+    // Load historical data from localStorage
+    const historicalData = JSON.parse(localStorage.getItem("historicalData")) || [];
+
+    function addBiomassEntry() {
+      if (!isAuthenticated) {
+        alert("Authentication required to add entries.");
+        return;
+      }
+
+      const biomassType = document.getElementById("biomassType").value;
+      const biomassQuantity = document.getElementById("biomassQuantity").value;
+
+      if (biomassType && biomassQuantity) {
+        const entry = { type: biomassType, quantity: biomassQuantity };
+        const listItem = document.createElement("li");
+        listItem.textContent = `${entry.type}: ${entry.quantity} units`;
+        biomassList.appendChild(listItem);
+
+        // Save entry to historical data
+        historicalData.push(entry);
+        localStorage.setItem("historicalData", JSON.stringify(historicalData));
+      } else {
+        alert("Please fill out all fields");
+      }
+
+      // Clear the form after adding an entry
+      biomassForm.reset();
+    }
+
+    function viewHistoricalData() {
+      if (!isAuthenticated) {
+        alert("Authentication required to view historical data.");
+        return;
+      }
+
+      const historicalList = document.createElement("ul");
+
+      historicalData.forEach((entry) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = `${entry.type}: ${entry.quantity} units`;
+        historicalList.appendChild(listItem);
+      });
+
+      alert("Historical Biomass Data:\n\n");
+      alert("Close this window to return to the main page.");
+
+      const historicalWindow = window.open("", "_blank");
+      historicalWindow.document.body.appendChild(historicalList);
+    }
+
+    function toggleAuthentication() {
+      isAuthenticated = !isAuthenticated;
+      localStorage.setItem("authenticated", isAuthenticated.toString());
+      alert(isAuthenticated ? "User authenticated" : "User logged out");
+    }
+
+    function filterBiomass() {
+      const selectedType = filterTypeSelect.value;
+      const filteredData = selectedType
+        ? biomassData.filter((entry) => entry.type === selectedType)
+        : biomassData;
+
+      displayBiomassData(filteredData);
+    }
+
+    function searchBiomass() {
+      const searchQuery = searchEntryInput.value.toLowerCase();
+      const searchData = biomassData.filter(
+        (entry) => entry.type.toLowerCase().includes(searchQuery)
+      );
+
+      displayBiomassData(searchData);
+    }
+
+    function displayBiomassData(data) {
+      biomassList.innerHTML = "";
+      data.forEach((entry) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = `${entry.type}: ${entry.quantity} units`;
+        biomassList.appendChild(listItem);
+      });
+    }
+
+    // Populate the filter dropdown with unique biomass types
+    const uniqueBiomassTypes = [...new Set(biomassData.map((entry) => entry.type))];
+    uniqueBiomassTypes.forEach((type) => {
+      const option = document.createElement("option");
+      option.value = type;
+      option.textContent = type;
+      filterTypeSelect.appendChild(option);
+    });
+
+    // For an admin user, provide additional functionality
+    if (isAdmin) {
+      // (Add admin-specific features here)
+    }
+  </script>
+</body>
+</html>
